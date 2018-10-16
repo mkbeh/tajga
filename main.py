@@ -57,7 +57,7 @@ class Parser(object):
     def write_data(**kwargs):
         """
         Method which insert data in specific collection.
-        :param kwargs:
+        :param kwargs: dict/s of data.
         :return:
         """
         mongo = pymongodb.MongoDB('btt')
@@ -74,7 +74,7 @@ class Parser(object):
     def parse_range(self, range_):
         """
         Method which parse range of pages.
-        :param range_:
+        :param range_: range of pages => (0, 80)
         :return:
         """
         count = range_[0]
@@ -86,7 +86,7 @@ class Parser(object):
     def parse(self, page_num):
         """
         Method which parse specific page.
-        :param page_num:
+        :param page_num: page number
         :return:
         """
         bs_obj = BeautifulSoup(self.get_html(self.url.format(page_num)), 'lxml')
