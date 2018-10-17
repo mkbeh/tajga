@@ -90,6 +90,8 @@ class Parser(object):
         :return:
         """
         bs_obj = BeautifulSoup(self.get_html(self.url.format(page_num)), 'lxml')
+        # Log parse page start.
+        utils.logger(f'Parsing {page_num} started.', 'tajga_page_parsed.log')
 
         # Find specific data.
         posts_links = bs_obj.findAll('span', {'id': re.compile('msg_\d*')})
@@ -132,8 +134,8 @@ class Parser(object):
         self.parse_last_page_num()                                          # Find last page number.
         ranges = utils.split_on_ranges(self.last_page_num, 10, 40)          # Split LPN on ranges.
 
-        for range_ in ranges:
-            Process(target=self.parse_range, args=(range_,))                # Parse pages by ranges.
+        # Parse pages by ranges in own process.
+        [Process(target=self.parse_range, args=(range_,)).start() for range_ in ranges]
 
 
 if __name__ == '__main__':
