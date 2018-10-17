@@ -107,6 +107,9 @@ class Parser(object):
             topic_started_date = td.find('div', {'class': 'smalltext'}).get_text()
             topic_started_dates.append(topic_started_date)
 
+        # Log parsed page.
+        utils.logger(f'Page {page_num} has parsed.', 'tajga_page_parsed.log')
+
         # If database is clear or not.
         if self.mongo_:
             data_lst = utils.list_creator_of_today_data(titles, links, topic_started_dates)
