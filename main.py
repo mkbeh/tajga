@@ -40,7 +40,7 @@ class Parser(object):
         :param url:
         :return:
         """
-        time.sleep(2)
+        time.sleep(3)
 
         try:
             html = requests.get(url, timeout=(10, 27), stream=True).content
@@ -63,6 +63,8 @@ class Parser(object):
         mongo = pymongodb.MongoDB('btt')
         mongo.insert_one(kwargs, 'en_altcoins')
 
+        utils.logger('Data has been written', 'tajga_page_parsed.log')
+
     def parse_last_page_num(self):
         """
         Method which parse last page number from first page.
@@ -80,6 +82,7 @@ class Parser(object):
         count = range_[0]
 
         while count != (range_[1] + 40):
+            print('count', count)
             self.parse(count)
             count += 40
 
@@ -90,6 +93,7 @@ class Parser(object):
         :return:
         """
         bs_obj = BeautifulSoup(self.get_html(self.url.format(page_num)), 'lxml')
+
         # Log parse page start.
         utils.logger(f'Parsing {page_num} started.', 'tajga_page_parsed.log')
 
@@ -108,9 +112,6 @@ class Parser(object):
             td = post_bs_obj.find('td', {'class': 'td_headerandpost'})
             topic_started_date = td.find('div', {'class': 'smalltext'}).get_text()
             topic_started_dates.append(topic_started_date)
-
-        # Log parsed page.
-        utils.logger(f'Page {page_num} has parsed.', 'tajga_page_parsed.log')
 
         # If database is clear or not.
         if self.mongo_:
@@ -131,8 +132,9 @@ class Parser(object):
         Second - create processes which parse received ranges.
         :return:
         """
-        self.parse_last_page_num()                                          # Find last page number.
-        ranges = utils.split_on_ranges(self.last_page_num, 10, 40)          # Split LPN on ranges.
+        self.parse_last_page_num()                                         # Find last page number.
+        self.last_page_num = 100 if self.mongo_ else self.last_page_num    # Set 100 pages for not clear db.
+        ranges = utils.split_on_ranges(self.last_page_num, 2, 40)          # Split LPN on ranges.
 
         # Parse pages by ranges in own process.
         [Process(target=self.parse_range, args=(range_,)).start() for range_ in ranges]

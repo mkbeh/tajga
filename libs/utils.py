@@ -36,11 +36,11 @@ def split_on_ranges(num, num_ranges, btt_specified=1):
     c = a
 
     for i in range(num_ranges):
-        e = 0 if i == 0 else 1
+        e = 0 if i == 0 else btt_specified
         ranges_lst.append((c - a + e, c))
 
         if i == num_ranges - 1 and last_range != 0:
-            ranges_lst.append((c + 1, c + last_range))
+            ranges_lst.append((c + btt_specified, c + last_range * btt_specified))
 
         else:
             c += a
