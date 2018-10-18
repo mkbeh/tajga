@@ -82,7 +82,6 @@ class Parser(object):
         count = range_[0]
 
         while count != (range_[1] + 40):
-            print('count', count)
             self.parse(count)
             count += 40
 
