@@ -21,6 +21,16 @@ def logger(msg, file):
     logger.info(msg)
 
 
+def values_comparison(val1, val2):
+    """
+    Func which comparison values and return tuple.
+    :param val1:
+    :param val2:
+    :return:
+    """
+    return (val1, val2) if val1 < val2 else (val1, val2 + 1)
+
+
 def split_on_ranges(num, num_ranges, btt_specified=1):
     """
     Func which split number on list of ranges.
@@ -40,7 +50,7 @@ def split_on_ranges(num, num_ranges, btt_specified=1):
         ranges_lst.append((c - a + e, c))
 
         if i == num_ranges - 1 and last_range != 0:
-            ranges_lst.append((c + btt_specified, c + last_range * btt_specified))
+            ranges_lst.append(values_comparison(c + btt_specified, c + last_range * btt_specified))
 
         else:
             c += a
