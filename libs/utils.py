@@ -60,7 +60,7 @@ def split_on_ranges(num, num_ranges, btt_specified=1):
 
 def list_creator_of_today_data(titles, links, dates):
     """
-    Func which create dict/s of today data by 3 sequences (titles, links, dates).
+    Func which create dict/s of today data from 3 sequences (titles, links, dates).
     :param titles:
     :param links:
     :param dates:

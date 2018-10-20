@@ -16,9 +16,13 @@ from libs import decorators
 
 class Parser(object):
     def __init__(self):
+        self.tor_proxies = {
+            'http': "socks5://127.0.0.1:9050",
+            'https': "socks5://127.0.0.1:9050"
+        }
         self.url = 'https://bitcointalk.org/index.php?board=159.{}'
         self.last_page_num = None
-        self.processes_num = 10                                          # Desired number of processes
+        self.processes_num = 2                                          # Desired number of processes
 
         self.mongo_ = self.check_on_clear_db()
 
@@ -33,28 +37,35 @@ class Parser(object):
 
         return True if document else False
 
-    @staticmethod
-    def get_html(url):
+    def get_html(self, url, tor=False):
         """
         Method which send GET request to specific url and return html.
         :param url:
+        :param tor:
         :return:
         """
         time.sleep(3)
+        html = None
+        proxies = None
+        client = requests.Session()
 
-        try:
-            html = requests.get(url, timeout=(10, 27), stream=True).content
-        except Exception as e:
-            print(e)
-
+        if tor:
             with TorRequest(proxy_port=9050, ctrl_port=9051, password=None) as tr:
                 tr.reset_identity()
-                html = tr.get(url, timeout=(10, 27), stream=True).content
 
-        return html
+            proxies = self.tor_proxies
+
+        try:
+            html = client.get(url, proxies=proxies, timeout=(3.05, 27), stream=True)
+        except Exception as e:
+            print(e)
+            self.get_html(url)
+
+        return html.content
 
     @staticmethod
-    def write_data(**kwargs):
+    @decorators.write_log
+    def write_data(*args, **kwargs):
         """
         Method which insert data in specific collection.
         :param kwargs: dict/s of data.
@@ -63,7 +74,7 @@ class Parser(object):
         mongo = pymongodb.MongoDB('btt')
         mongo.insert_one(kwargs, 'en_altcoins')
 
-        utils.logger('Data has been written', 'tajga_page_parsed.log')
+        return args[0]
 
     def parse_last_page_num(self):
         """
@@ -73,6 +84,7 @@ class Parser(object):
         bs_obj = BeautifulSoup(self.get_html(self.url.format('0')), 'lxml')
         self.last_page_num = int(bs_obj.findAll('a', {'class': 'navPages'})[-2].get_text())
 
+    @decorators.log
     def parse_range(self, range_):
         """
         Method which parse range of pages.
@@ -92,9 +104,6 @@ class Parser(object):
         :return:
         """
         bs_obj = BeautifulSoup(self.get_html(self.url.format(page_num)), 'lxml')
-
-        # Log parse page start.
-        utils.logger(f'Parsing {page_num} started.', 'tajga_page_parsed.log')
 
         # Find specific data.
         posts_links = bs_obj.findAll('span', {'id': re.compile('msg_\d*')})
@@ -117,13 +126,14 @@ class Parser(object):
             data_lst = utils.list_creator_of_today_data(titles, links, topic_started_dates)
 
             for data_dict in data_lst:
-                self.write_data(title=data_dict['title'], link=data_dict['link'], topic_started_date=data_dict['date'])
+                self.write_data((lambda x: (x / 40).__round__())(page_num), title=data_dict['title'],
+                                link=data_dict['link'], topic_started_date=data_dict['date'])
 
         else:
             for i in range(len(titles)):
-                self.write_data(title=titles[i], link=links[i], topic_started_date=topic_started_dates[i])
+                self.write_data((lambda x: (x / 40).__round__())(page_num), title=titles[i],
+                                link=links[i], topic_started_date=topic_started_dates[0])
 
-    @decorators.log
     def run(self):
         """
         Method which run parser.
@@ -131,9 +141,9 @@ class Parser(object):
         Second - create processes which parse received ranges.
         :return:
         """
-        self.parse_last_page_num()                                         # Find last page number.
-        self.last_page_num = 100 if self.mongo_ else self.last_page_num    # Set 100 pages for not clear db.
-        ranges = utils.split_on_ranges(self.last_page_num, 2, 40)          # Split LPN on ranges.
+        self.parse_last_page_num()                                                  # Find last page number.
+        self.last_page_num = 100 if self.mongo_ else self.last_page_num             # Set 100 pages for not clear db.
+        ranges = utils.split_on_ranges(self.last_page_num, self.processes_num, 40)  # Split LPN on ranges.
 
         # Parse pages by ranges in own process.
         [Process(target=self.parse_range, args=(range_,)).start() for range_ in ranges]

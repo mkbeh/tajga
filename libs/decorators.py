@@ -3,18 +3,27 @@ import logging
 
 # Func which log func success result.
 def log(func):
-    def wrapper(self, *args, **kwargs):
-        logger = logging.getLogger('Main')
-        logger.setLevel(logging.INFO)
+    def wrapper(*args, **kwargs):
+        if not func(*args, **kwargs):
+            logging.basicConfig(filename='tajga.log', level=logging.INFO,
+                                format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+            logging.info('Success status: DONE')
 
-        fh = logging.FileHandler('tajga.log')
-        fmt = '%(asctime)s - %(name)s - %(levelname)s - %(message)s'
-        formatter = logging.Formatter(fmt)
-        fh.setFormatter(formatter)
-        logger.addHandler(fh)
+    return wrapper
 
-        if func(self, *args, **kwargs) is None:
-            logger.info('Success status: %s' % 'DONE')
+
+# Func which log func success result.
+def write_log(func):
+    def wrapper(*args, **kwargs):
+        # if func(*args, **kwargs):
+        #     logging.basicConfig(filename='tajga.log', level=logging.INFO,
+        #                         format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+        #     logging.info('Success write data.')
+
+        val = func(*args, **kwargs)
+        logging.basicConfig(filename='tajga.log', level=logging.INFO,
+                            format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+        logging.info('Success write data from page {}.'.format(val))
 
     return wrapper
 
